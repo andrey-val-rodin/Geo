@@ -1,6 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
              x:Class="Geo.MainPage">
 
+    <Shell.TitleView>
+        <Grid>
+            <Label Text="Определение местоположения..."
+                   x:Name="TitleLabel"
+                   HorizontalOptions="Start"
+                   VerticalOptions="Center"
+                   Margin="12,0"
+                   FontSize="Title">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTitleTapped"/>
+                </Label.GestureRecognizers>
+            </Label>
+        </Grid>
+    </Shell.TitleView>
+
+    <Grid>
+        <!-- Карта -->
+        <mapsui:MapControl x:Name="MapElement"
+                           VerticalOptions="Fill"
+                           HorizontalOptions="Fill" />
+
+        <!-- Индикатор загрузки -->
+        <ActivityIndicator x:Name="LoadingIndicator"
+                           IsRunning="False"
+                           IsVisible="False"
+                           Color="Blue"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+    </Grid>
 </ContentPage>
