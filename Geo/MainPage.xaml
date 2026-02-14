@@ -10,8 +10,7 @@
                    x:Name="TitleLabel"
                    HorizontalOptions="Start"
                    VerticalOptions="Center"
-                   Margin="12,0"
-                   FontSize="Title">
+                   FontSize="Medium">
                 <Label.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTitleTapped"/>
                 </Label.GestureRecognizers>

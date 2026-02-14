@@ -1,13 +1,13 @@
 ﻿using Geo.Services;
-using Mapsui;
-using Mapsui.Projections;
 using Mapsui.Tiling;
-using System.Globalization;
 
 namespace Geo
 {
     public partial class MainPage : ContentPage
     {
+        private readonly CurrentLocation _currentLocation = new();
+        private bool _isTapped;
+
         public MainPage()
         {
             InitializeComponent();
@@ -15,6 +15,8 @@ namespace Geo
             MapElement.Map?.Layers.Add(OpenStreetMap.CreateTileLayer());
             MapElement.Map?.Widgets.Clear();
         }
+
+        public bool IsInitialized => _currentLocation.IsInitialized;
 
         protected override async void OnAppearing()
         {
@@ -25,18 +27,25 @@ namespace Geo
         private async Task InitializeAsync()
         {
             ShowProgress();
-
-            var location = await Locator.GetCurrentLocationAsync(CancellationToken.None);
-            if (location != null)
+            try
             {
-                var latitude = location.Latitude.ToString(CultureInfo.InvariantCulture);
-                var longitude = location.Longitude.ToString(CultureInfo.InvariantCulture);
-                TitleLabel.Text = $"{latitude}, {longitude}";
-
-                DisplayLocation(location);
+                await _currentLocation.InitializeAsync(CancellationToken.None);
+                if (_currentLocation.IsInitialized)
+                {
+                    MapElement.Map?.Navigator?.CenterOnAndZoomTo(_currentLocation.ToSphericalMercator(), 4, 1000);
+                    TitleLabel.Text = _currentLocation.ToString();
+                }
+                else
+                    TitleLabel.Text = "Местоположение неизвестно";
             }
-
-            HideProgress();
+            catch (Exception ex)
+            {
+                await DisplayAlert("Неожиданная ошибка", "OK", ex.ToString());
+            }
+            finally
+            {
+                HideProgress();
+            }
         }
 
         private void ShowProgress()
@@ -51,36 +60,18 @@ namespace Geo
             LoadingIndicator.IsVisible = false;
         }
 
-        private bool DisplayLocation(Location location)
-        {
-            ArgumentNullException.ThrowIfNull(location, nameof(location));
-
-            try
-            {
-                // Transform coordinates
-                var point = SphericalMercator.FromLonLat(new MPoint(location.Longitude, location.Latitude));
-
-                // Move map to coordinates
-                MapElement.Map?.Navigator?.CenterOnAndZoomTo(point, 4, 1000);
-
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
         private async void OnTitleTapped(object sender, EventArgs e)
         {
-            if (sender is not Label label)
+            if (!IsInitialized || _isTapped || sender is not Label label)
                 return;
 
-            string coordinates = label.Text;
+            _isTapped = true;
+            string coordinates = _currentLocation.ToString();
             await Clipboard.Default.SetTextAsync(coordinates);
             label.Text = "Скопировано в буфер обмена!";
             await Task.Delay(1000);
             label.Text = coordinates;
+            _isTapped = false;
         }
     }
 }
