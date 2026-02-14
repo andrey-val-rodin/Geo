@@ -10,7 +10,7 @@
                    x:Name="TitleLabel"
                    HorizontalOptions="Start"
                    VerticalOptions="Center"
-                   FontSize="Medium">
+                   FontSize="Small">
                 <Label.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTitleTapped"/>
                 </Label.GestureRecognizers>
@@ -28,7 +28,7 @@
         <ActivityIndicator x:Name="LoadingIndicator"
                            IsRunning="False"
                            IsVisible="False"
-                           Color="Blue"
+                           Color="#218F4A"
                            HorizontalOptions="Center"
                            VerticalOptions="Center"/>
     </Grid>
