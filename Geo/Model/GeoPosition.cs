@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace Geo.Model
 {
-    public sealed class GeoPosition
+    public sealed record GeoPosition
     {
         public GeoPosition(Location location)
         {
@@ -13,7 +13,7 @@ namespace Geo.Model
             Location = location;
         }
 
-        public Location Location { get; private set; }
+        public Location Location { get; init; }
 
         public MPoint ToSphericalMercator()
         {

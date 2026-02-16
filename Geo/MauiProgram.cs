@@ -1,4 +1,5 @@
-﻿using SkiaSharp.Views.Maui.Controls.Hosting;
+﻿using Microsoft.Extensions.Logging;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace Geo
 {
