@@ -6,7 +6,6 @@ namespace Geo
     public partial class MainPage : ContentPage
     {
         private LocationTracker _tracker;
-        private readonly TrackRenderer _renderer;
         private bool _isTapped;
 
         public MainPage()
@@ -15,7 +14,6 @@ namespace Geo
 
             MapElement.Map?.Layers.Add(OpenStreetMap.CreateTileLayer());
             MapElement.Map?.Widgets.Clear();
-            _renderer = new TrackRenderer(MapElement);
         }
 
         private async void ListeningFailed(object sender, GeolocationListeningFailedEventArgs e)
@@ -37,6 +35,7 @@ namespace Geo
             base.OnDisappearing();
             LocationTracker.ListeningFailed -= ListeningFailed;
             _tracker.Dispose();
+            _tracker = null;
         }
 
         private async Task InitializeAsync()
@@ -49,7 +48,8 @@ namespace Geo
                     if (_tracker == null || _tracker.IsEmpty)
                         return;
 
-                    _renderer.Render(_tracker);
+                    using var renderer = new TrackRenderer(MapElement);
+                    renderer.Render(_tracker);
                     TitleLabel.Text = _tracker.CurrentLocation.ToString();
                 }
                 _tracker = new LocationTracker(AddLocationAction);
@@ -86,12 +86,27 @@ namespace Geo
                 return;
 
             _isTapped = true;
-            string coordinates = _tracker.CurrentLocation.ToString();
-            await Clipboard.Default.SetTextAsync(coordinates);
-            label.Text = "Скопировано в буфер обмена";
-            await Task.Delay(1000);
-            label.Text = coordinates;
-            _isTapped = false;
+            string originalText = label.Text;
+
+            try
+            {
+                string coordinates = _tracker.CurrentLocation.ToString();
+                await Clipboard.Default.SetTextAsync(coordinates);
+
+                label.Text = "Скопировано в буфер обмена";
+                await Task.Delay(1000);
+                label.Text = originalText;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Clipboard error: {ex}");
+                await DisplayAlert("Ошибка", $"Ошибка копирования в буфер обмена", "OK");
+                label.Text = originalText;
+            }
+            finally
+            {
+                _isTapped = false;
+            }
         }
     }
 }

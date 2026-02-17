@@ -11,7 +11,7 @@ namespace Geo.Services
         }
 
         protected readonly List<GeoPosition> _previousLocations = [];
-        private bool disposedValue;
+        private bool _disposed;
 
         public IReadOnlyList<GeoPosition> PreviousLocations => _previousLocations as IReadOnlyList<GeoPosition>;
         public GeoPosition CurrentLocation { get; private set; }
@@ -23,6 +23,9 @@ namespace Geo.Services
             try
             {
                 var currentLocation = await GetCurrentLocationAsync(token);
+                if (currentLocation == null)
+                    return false;
+
                 AddLocation(currentLocation);
 
                 return await StartListeningAsync();
@@ -91,13 +94,13 @@ namespace Geo.Services
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposed)
             {
                 if (disposing)
                 {
                     StopListening();
                 }
-                disposedValue = true;
+                _disposed = true;
             }
         }
 

@@ -6,13 +6,14 @@ using Mapsui.UI.Maui;
 
 namespace Geo.Services
 {
-    public class TrackRenderer
+    public partial class TrackRenderer : IDisposable
     {
         private const string CPL_NAME = "CurrentPointLayer";
         private const string PPL_NAME = "PreviousPointsLayer";
 
         private readonly MemoryLayer _currentPointLayer;
         private readonly MemoryLayer _previousPointsLayer;
+        private bool _disposed;
 
         public TrackRenderer(MapControl control)
         {
@@ -20,10 +21,20 @@ namespace Geo.Services
 
             MapControl = control;
 
-            _previousPointsLayer = new MemoryLayer { Name = PPL_NAME, Style = null };
-            MapControl.Map?.Layers.Add(_previousPointsLayer);
-            _currentPointLayer = new MemoryLayer { Name = CPL_NAME };
-            MapControl.Map?.Layers.Add(_currentPointLayer);
+            // Get or create layers
+            _previousPointsLayer = MapControl.Map?.Layers.FirstOrDefault(l => l.Name == PPL_NAME) as MemoryLayer;
+            if (_previousPointsLayer == null)
+            {
+                _previousPointsLayer = new MemoryLayer { Name = PPL_NAME, Style = null };
+                MapControl.Map?.Layers.Add(_previousPointsLayer);
+            }
+
+            _currentPointLayer = MapControl.Map?.Layers.FirstOrDefault(l => l.Name == CPL_NAME) as MemoryLayer;
+            if ( _currentPointLayer == null)
+            {
+                _currentPointLayer = new MemoryLayer { Name = CPL_NAME };
+                MapControl.Map?.Layers.Add(_currentPointLayer);
+            }
         }
 
         public MapControl MapControl { get; private set; }
@@ -46,6 +57,7 @@ namespace Geo.Services
                 MapControl.Map?.Navigator?.CenterOnAndZoomTo(currentLocation.ToSphericalMercator(), 4, 1000);
             });
         }
+
         private void AddPreviousPoints(IEnumerable<GeoPosition> locations)
         {
             var features = new List<GeometryFeature>();
@@ -95,6 +107,26 @@ namespace Geo.Services
         {
             var point = location.ToSphericalMercator();
             return new NetTopologySuite.Geometries.Point(point.X, point.Y);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _currentPointLayer.Dispose();
+                    _previousPointsLayer.Dispose();
+                }
+
+                _disposed = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
