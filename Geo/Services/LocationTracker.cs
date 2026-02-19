@@ -22,13 +22,24 @@ namespace Geo.Services
         {
             try
             {
+                return await FetchCurrentLocation(token) && await StartListeningAsync();
+            }
+            catch (TaskCanceledException) when (token.IsCancellationRequested)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> FetchCurrentLocation(CancellationToken token)
+        {
+            try
+            {
                 var currentLocation = await GetCurrentLocationAsync(token);
                 if (currentLocation == null)
                     return false;
 
                 AddLocation(currentLocation);
-
-                return await StartListeningAsync();
+                return true;
             }
             catch (TaskCanceledException) when (token.IsCancellationRequested)
             {

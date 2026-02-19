@@ -6,8 +6,7 @@
 
     <Shell.TitleView>
         <Grid>
-            <Label Text="Определение местоположения..."
-                   x:Name="TitleLabel"
+            <Label x:Name="TitleLabel"
                    HorizontalOptions="Start"
                    VerticalOptions="Center"
                    FontSize="Small">
@@ -17,19 +16,4 @@
             </Label>
         </Grid>
     </Shell.TitleView>
-
-    <Grid>
-        <!-- Карта -->
-        <mapsui:MapControl x:Name="MapElement"
-                           VerticalOptions="Fill"
-                           HorizontalOptions="Fill" />
-
-        <!-- Индикатор загрузки -->
-        <ActivityIndicator x:Name="LoadingIndicator"
-                           IsRunning="False"
-                           IsVisible="False"
-                           Color="#218F4A"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center"/>
-    </Grid>
 </ContentPage>

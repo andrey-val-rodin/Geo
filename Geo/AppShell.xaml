@@ -7,8 +7,6 @@
     Title="Geo">
 
     <ShellContent
-        Title="Определение местоположения..."
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
-
 </Shell>

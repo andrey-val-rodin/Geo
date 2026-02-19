@@ -1,5 +1,6 @@
 ﻿using Geo.Services;
 using Mapsui.Tiling;
+using Mapsui.UI.Maui;
 
 namespace Geo
 {
@@ -12,9 +13,18 @@ namespace Geo
         {
             InitializeComponent();
 
-            MapElement.Map?.Layers.Add(OpenStreetMap.CreateTileLayer());
-            MapElement.Map?.Widgets.Clear();
+            // Disable automatic screen turn-off
+            DeviceDisplay.Current.KeepScreenOn = true;
+
+            var mapControl = new MapControl();
+            mapControl.Map?.Layers.Add(OpenStreetMap.CreateTileLayer());
+            mapControl.Map?.Widgets.Clear();
+            Content = mapControl;
+
+            ((App)App.Current).Resumed += async (s, e) => await OnAppResumedAsync();
         }
+
+        public MapControl MapElement => Content as MapControl;
 
         private async void ListeningFailed(object sender, GeolocationListeningFailedEventArgs e)
         {
@@ -38,20 +48,36 @@ namespace Geo
             _tracker = null;
         }
 
-        private async Task InitializeAsync()
+        public async Task OnAppResumedAsync()
         {
-            ShowProgress();
+            if (!IsInitialized || IsBusy)
+                return;
+
+            IsBusy = true;
+            TitleLabel.Text = "Определение местоположения...";
             try
             {
-                void AddLocationAction()
+                if (!await _tracker.FetchCurrentLocation(CancellationToken.None))
                 {
-                    if (_tracker == null || _tracker.IsEmpty)
-                        return;
-
-                    using var renderer = new TrackRenderer(MapElement);
-                    renderer.Render(_tracker);
-                    TitleLabel.Text = _tracker.CurrentLocation.ToString();
+                    TitleLabel.Text = "Местоположение неизвестно";
                 }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Неожиданная ошибка", ex.ToString(), "OK");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task InitializeAsync()
+        {
+            IsBusy = true;
+            TitleLabel.Text = "Определение местоположения...";
+            try
+            {
                 _tracker = new LocationTracker(AddLocationAction);
                 if (!await _tracker.InitializeAsync(CancellationToken.None))
                 {
@@ -64,20 +90,18 @@ namespace Geo
             }
             finally
             {
-                HideProgress();
+                IsBusy = false;
             }
         }
 
-        private void ShowProgress()
+        void AddLocationAction()
         {
-            LoadingIndicator.IsRunning = true;
-            LoadingIndicator.IsVisible = true;
-        }
+            if (_tracker == null || _tracker.IsEmpty)
+                return;
 
-        private void HideProgress()
-        {
-            LoadingIndicator.IsRunning = false;
-            LoadingIndicator.IsVisible = false;
+            using var renderer = new TrackRenderer(MapElement);
+            renderer.Render(_tracker);
+            TitleLabel.Text = _tracker.CurrentLocation.ToString();
         }
 
         private async void OnTitleTapped(object sender, EventArgs e)
