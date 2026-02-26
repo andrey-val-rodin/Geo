@@ -1,6 +1,8 @@
 ﻿using Geo.Services;
+using Mapsui.Extensions;
 using Mapsui.Tiling;
 using Mapsui.UI.Maui;
+using Mapsui.Widgets.ButtonWidgets;
 
 namespace Geo
 {
@@ -20,11 +22,19 @@ namespace Geo
             mapControl.Map?.Layers.Add(OpenStreetMap.CreateTileLayer());
             mapControl.Map?.Widgets.Clear();
             Content = mapControl;
+#if WINDOWS
+            var widget = new ZoomInOutWidget
+            {
+                HorizontalAlignment = Mapsui.Widgets.HorizontalAlignment.Right,
+                VerticalAlignment = Mapsui.Widgets.VerticalAlignment.Center
+            };
+            MapControl.Map.Widgets.Add(widget);
+#endif
 
             ((App)App.Current).Resumed += async (s, e) => await OnAppResumedAsync();
         }
 
-        public MapControl MapElement => Content as MapControl;
+        public MapControl MapControl => Content as MapControl;
 
         private async void ListeningFailed(object sender, GeolocationListeningFailedEventArgs e)
         {
@@ -53,23 +63,7 @@ namespace Geo
             if (!IsInitialized || IsBusy)
                 return;
 
-            IsBusy = true;
-            TitleLabel.Text = "Определение местоположения...";
-            try
-            {
-                if (!await _tracker.FetchCurrentLocation(CancellationToken.None))
-                {
-                    TitleLabel.Text = "Местоположение неизвестно";
-                }
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Неожиданная ошибка", ex.ToString(), "OK");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            await InitializeAsync();
         }
 
         private async Task InitializeAsync()
@@ -78,15 +72,26 @@ namespace Geo
             TitleLabel.Text = "Определение местоположения...";
             try
             {
-                _tracker = new LocationTracker(AddLocationAction);
-                if (!await _tracker.InitializeAsync(CancellationToken.None))
+                if (_tracker == null)
                 {
-                    TitleLabel.Text = "Местоположение неизвестно";
+                    _tracker = new LocationTracker(AddLocationAction);
+                    if (!await _tracker.InitializeAsync(CancellationToken.None))
+                    {
+                        TitleLabel.Text = "Местоположение неизвестно";
+                    }
+                }
+                else
+                {
+                    if (!await _tracker.FetchCurrentLocation(CancellationToken.None))
+                    {
+                        TitleLabel.Text = "Местоположение неизвестно";
+                    }
                 }
             }
             catch (Exception ex)
             {
                 await DisplayAlert("Неожиданная ошибка", ex.ToString(), "OK");
+                TitleLabel.Text = "Ошибка";
             }
             finally
             {
@@ -99,9 +104,9 @@ namespace Geo
             if (_tracker == null || _tracker.IsEmpty)
                 return;
 
-            using var renderer = new TrackRenderer(MapElement);
+            using var renderer = new TrackRenderer(MapControl);
             renderer.Render(_tracker);
-            TitleLabel.Text = _tracker.CurrentLocation.ToString();
+            MainThread.BeginInvokeOnMainThread(() => TitleLabel.Text = _tracker.CurrentLocation.ToString());
         }
 
         private async void OnTitleTapped(object sender, EventArgs e)
@@ -118,6 +123,9 @@ namespace Geo
                 await Clipboard.Default.SetTextAsync(coordinates);
 
                 label.Text = "Скопировано в буфер обмена";
+                using var renderer = new TrackRenderer(MapControl);
+                renderer.Render(_tracker);
+
                 await Task.Delay(1000);
                 label.Text = originalText;
             }

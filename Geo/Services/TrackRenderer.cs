@@ -54,8 +54,16 @@ namespace Geo.Services
 
                 _previousPointsLayer.DataHasChanged();
                 _currentPointLayer.DataHasChanged();
-                MapControl.Map?.Navigator?.CenterOnAndZoomTo(currentLocation.ToSphericalMercator(), 4, 1000);
+                MapControl.Map?.Navigator?.CenterOnAndZoomTo(
+                    currentLocation.ToSphericalMercator(), GetResolution(), 1000);
             });
+        }
+
+        private double GetResolution()
+        {
+            var resolutions = MapControl.Map?.Navigator?.Resolutions;
+            var result = resolutions?.FirstOrDefault(r => Math.Floor(r) == 4.0) ?? 4.7773142678234581;
+            return result;
         }
 
         private void AddPreviousPoints(IEnumerable<GeoPosition> locations)
