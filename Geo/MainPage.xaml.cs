@@ -131,8 +131,7 @@ namespace Geo
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Clipboard error: {ex}");
-                await DisplayAlert("Ошибка", $"Ошибка копирования в буфер обмена", "OK");
+                await DisplayAlert("Неожиданная ошибка", ex.ToString(), "OK");
                 label.Text = originalText;
             }
             finally
