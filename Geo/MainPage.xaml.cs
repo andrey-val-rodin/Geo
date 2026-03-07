@@ -9,7 +9,6 @@ namespace Geo
     public partial class MainPage : ContentPage
     {
         private LocationTracker _tracker;
-        private bool _isTapped;
 
         public MainPage()
         {
@@ -111,10 +110,10 @@ namespace Geo
 
         private async void OnTitleTapped(object sender, EventArgs e)
         {
-            if (!IsInitialized || _isTapped || sender is not Label label)
+            if (IsBusy || sender is not Label label)
                 return;
 
-            _isTapped = true;
+            IsBusy = true;
             string originalText = label.Text;
 
             try
@@ -136,7 +135,7 @@ namespace Geo
             }
             finally
             {
-                _isTapped = false;
+                IsBusy = false;
             }
         }
     }
