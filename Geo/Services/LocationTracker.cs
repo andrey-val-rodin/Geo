@@ -2,13 +2,14 @@
 
 namespace Geo.Services
 {
-    public partial class LocationTracker(Action addLocationAction = null) : IDisposable
+    public partial class LocationTracker : IDisposable
     {
         public static event EventHandler<GeolocationListeningFailedEventArgs> ListeningFailed
         {
             add => Geolocation.ListeningFailed += value;
             remove => Geolocation.ListeningFailed -= value;
         }
+        public event EventHandler<LocationAddedEventArgs> LocationAdded;
 
         protected readonly List<GeoPosition> _previousLocations = [];
         private bool _disposed;
@@ -16,7 +17,6 @@ namespace Geo.Services
         public IReadOnlyList<GeoPosition> PreviousLocations => _previousLocations as IReadOnlyList<GeoPosition>;
         public GeoPosition CurrentLocation { get; private set; }
         public bool IsEmpty => CurrentLocation == null;
-        public Action AddLocationAction { get; set; } = addLocationAction;
 
         public async Task<bool> InitializeAsync(CancellationToken token)
         {
@@ -100,7 +100,7 @@ namespace Geo.Services
             }
             CurrentLocation = location;
 
-            AddLocationAction?.Invoke();
+            LocationAdded?.Invoke(this, new LocationAddedEventArgs(location));
         }
 
         protected virtual void Dispose(bool disposing)

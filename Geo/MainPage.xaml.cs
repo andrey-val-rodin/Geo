@@ -1,4 +1,5 @@
-﻿using Geo.Services;
+﻿using Geo.Model;
+using Geo.Services;
 using Mapsui.Extensions;
 using Mapsui.Tiling;
 using Mapsui.UI.Maui;
@@ -45,16 +46,13 @@ namespace Geo
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-            LocationTracker.ListeningFailed += ListeningFailed;
-            await InitializeAsync();
+            await StartTrackingAsync();
         }
 
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
-            LocationTracker.ListeningFailed -= ListeningFailed;
-            _tracker.Dispose();
-            _tracker = null;
+            StopTracking();
         }
 
         public async Task OnAppResumedAsync()
@@ -62,18 +60,21 @@ namespace Geo
             if (!IsInitialized || IsBusy)
                 return;
 
-            await InitializeAsync();
+            await StartTrackingAsync();
         }
 
-        private async Task InitializeAsync()
+        private async Task StartTrackingAsync()
         {
             IsBusy = true;
             TitleLabel.Text = "Определение местоположения...";
+            LocationTracker.ListeningFailed -= ListeningFailed;
+            LocationTracker.ListeningFailed += ListeningFailed;
             try
             {
                 if (_tracker == null)
                 {
-                    _tracker = new LocationTracker(AddLocationAction);
+                    _tracker = new LocationTracker();
+                    _tracker.LocationAdded += LocationAdded;
                     if (!await _tracker.InitializeAsync(CancellationToken.None))
                     {
                         TitleLabel.Text = "Местоположение неизвестно";
@@ -98,14 +99,25 @@ namespace Geo
             }
         }
 
-        void AddLocationAction()
+        private void StopTracking()
         {
-            if (_tracker == null || _tracker.IsEmpty)
+            LocationTracker.ListeningFailed -= ListeningFailed;
+            if (_tracker != null)
+            {
+                _tracker.LocationAdded -= LocationAdded;
+                _tracker.Dispose();
+                _tracker = null;
+            }
+        }
+
+        private void LocationAdded(object sender, LocationAddedEventArgs e)
+        {
+            if (sender is not LocationTracker tracker)
                 return;
 
             using var renderer = new TrackRenderer(MapControl);
-            renderer.Render(_tracker);
-            MainThread.BeginInvokeOnMainThread(() => TitleLabel.Text = _tracker.CurrentLocation.ToString());
+            renderer.Render(tracker);
+            MainThread.BeginInvokeOnMainThread(() => TitleLabel.Text = tracker.CurrentLocation.ToString());
         }
 
         private async void OnTitleTapped(object sender, EventArgs e)
