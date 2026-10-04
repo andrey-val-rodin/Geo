@@ -19,7 +19,8 @@ namespace Geo
             DeviceDisplay.Current.KeepScreenOn = true;
 
             var mapControl = new MapControl();
-            mapControl.Map?.Layers.Add(OpenStreetMap.CreateTileLayer());
+            string userAgent = "Geo app/1.0 (+https://github.com/andrey-val-rodin/Geo)";
+            mapControl.Map?.Layers.Add(OpenStreetMap.CreateTileLayer(userAgent));
             mapControl.Map?.Widgets.Clear();
             Content = mapControl;
 #if WINDOWS
