@@ -126,6 +126,13 @@ namespace Geo
             if (IsBusy || sender is not Label label)
                 return;
 
+            if (_tracker.CurrentLocation == null)
+            {
+                await StartTrackingAsync();
+                if (_tracker.CurrentLocation == null)
+                    return;
+            }
+
             IsBusy = true;
             string originalText = label.Text;
 
